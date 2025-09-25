@@ -2,7 +2,7 @@
 
 A proof-of-concept conversational agent in Go that composes an agent graph with CloudWeGo Eino, uses Google Gemini models for NLU and response generation, and persists conversation history in Redis. The entry point (`main.go`) demonstrates an end-to-end flow configured via environment variables.
 
-![Agent Flow](@asset/agent_flow.png)
+![Agent Flow](asset/agent_flow.png)
 
 ## Features
 - Agent graph with conditional branches (NLU → parse → human handoff or response assembly → tools → final response)

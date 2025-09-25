@@ -100,7 +100,7 @@ func main() {
 	conversationID := "test-conversation-123451"
 
 	for i, test := range testQueries {
-		fmt.Printf("\n🚀 Test %d: %s\n", i+1, test.description)
+		fmt.Printf("\nTest %d: %s\n", i+1, test.description)
 		fmt.Printf("Query: \"%s\"\n", test.query)
 		fmt.Println("Processing...")
 
@@ -112,12 +112,12 @@ func main() {
 			log.Fatalf("Failed to invoke graph for test %d: %v", i+1, err)
 		}
 
-		fmt.Printf("✅ Response %d: %s\n", i+1, response)
+		fmt.Printf("Response %d: %s\n", i+1, response)
 		fmt.Println("─────────────────────────────────────────────")
 
 		// add slight delay between tests for readability
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	fmt.Println("🎉 All graph tests completed successfully!")
+	fmt.Println("All graph tests completed successfully!")
 }
