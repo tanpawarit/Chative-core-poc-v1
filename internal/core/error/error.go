@@ -11,62 +11,93 @@ const (
 	SystemErrorMessage = "internal server error"
 	// RedisErrorMessage describes Redis related failures.
 	RedisErrorMessage = "redis operation failed"
+	// RedisNotFoundMessage is returned when a Redis key is missing.
+	RedisNotFoundMessage = "record not found"
 )
 
-// AppError wraps an underlying error with an HTTP status and safe message.
-type AppError struct {
+// Error wraps an underlying error with an HTTP status code and safe message.
+type Error struct {
 	Err     error
 	Status  int
 	Message string
 }
 
 // Error implements the error interface.
-func (e *AppError) Error() string {
+func (e *Error) Error() string {
+	if e == nil {
+		return "<nil>"
+	}
 	if e.Err == nil {
+		if e.Message == "" {
+			return SystemErrorMessage
+		}
 		return e.Message
+	}
+	if e.Message == "" {
+		return e.Err.Error()
 	}
 	return fmt.Sprintf("%s: %v", e.Message, e.Err)
 }
 
-// Unwrap exposes the underlying error for errors.Is / errors.As support.
-func (e *AppError) Unwrap() error {
+// Unwrap exposes the wrapped error for errors.Is / errors.As support.
+func (e *Error) Unwrap() error {
+	if e == nil {
+		return nil
+	}
 	return e.Err
 }
 
-// New creates a new AppError with the provided information.
-func New(err error, status int, message string) *AppError {
-	return &AppError{
-		Err:     err,
-		Status:  status,
-		Message: message,
+// StatusCode reports the HTTP status code, defaulting to 500.
+func (e *Error) StatusCode() int {
+	if e == nil || e.Status == 0 {
+		return http.StatusInternalServerError
 	}
+	return e.Status
 }
 
-// WrapRedis wraps a Redis error with a consistent status code and message.
-func WrapRedis(err error) error {
-	if err == nil {
-		return nil
+// PublicMessage returns a safe message that can be surfaced to external clients.
+func (e *Error) PublicMessage() string {
+	if e == nil || e.Message == "" {
+		return SystemErrorMessage
 	}
-	return &AppError{
-		Err:     err,
-		Status:  http.StatusBadGateway,
-		Message: RedisErrorMessage,
-	}
+	return e.Message
 }
 
-// Is reports whether the target matches the underlying error or the AppError itself.
-func (e *AppError) Is(target error) bool {
-	return errors.Is(e.Err, target)
+// New constructs a new Error from the provided components.
+func New(err error, status int, message string) *Error {
+	if status == 0 {
+		status = http.StatusInternalServerError
+	}
+	if message == "" {
+		message = SystemErrorMessage
+	}
+	return &Error{Err: err, Status: status, Message: message}
 }
 
-// As allows casting to AppError or the wrapped error in a chain.
-func (e *AppError) As(target any) bool {
-	if errors.As(e.Err, target) {
-		return true
+// AsError attempts to coerce err into an *Error instance.
+func AsError(err error) (*Error, bool) {
+	var target *Error
+	if errors.As(err, &target) {
+		return target, true
 	}
-	if t, ok := target.(**AppError); ok {
-		*t = e
+	return nil, false
+}
+
+// Is compares err against a template Error value using status/message fields.
+func Is(err error, target *Error) bool {
+	if target == nil {
+		return errors.Is(err, nil)
+	}
+	if actual, ok := AsError(err); ok {
+		if target.Status != 0 && actual.StatusCode() != target.Status {
+			return false
+		}
+		if target.Message != "" && actual.PublicMessage() != target.Message {
+			return false
+		}
 		return true
 	}
 	return false
 }
+
+var _ error = (*Error)(nil)

@@ -9,16 +9,16 @@ import (
 	"github.com/Chative-core-poc-v1/server/internal/agent/graph"
 	"github.com/Chative-core-poc-v1/server/internal/agent/model"
 	"github.com/Chative-core-poc-v1/server/internal/agent/repo"
+	pkgredis "github.com/Chative-core-poc-v1/server/pkg/redis"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/redis/go-redis/v9"
 )
 
 // AppConfig defines all configurable parameters for the agent example,
 // sourced from environment variables (loaded from .env for local runs).
 type AppConfig struct {
 	// Infrastructure
-	RedisURL string `envconfig:"REDIS_URL" required:"true"`
+	Redis pkgredis.Config
 
 	// LLM provider
 	APIKey  string `envconfig:"GEMINI_API_KEY" required:"true"`
@@ -45,19 +45,12 @@ func main() {
 		log.Fatalf("Failed to process environment config: %v", err)
 	}
 
-	// Parse Redis URL and create client with TLS support
-	opts, err := redis.ParseURL(envCfg.RedisURL)
+	rdb, err := envCfg.Redis.New()
 	if err != nil {
-		log.Fatalf("Failed to parse Redis URL: %v", err)
+		log.Fatalf("Failed to initialise Redis client: %v", err)
 	}
-
-	rdb := redis.NewClient(opts)
 	defer rdb.Close()
 
-	// Test connection
-	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
-	}
 	fmt.Println("Connected to Redis successfully")
 
 	// ====================================================
@@ -122,7 +115,7 @@ func main() {
 		fmt.Printf("✅ Response %d: %s\n", i+1, response)
 		fmt.Println("─────────────────────────────────────────────")
 
-		// เพิ่มเวลาหยุดสั้นๆ เพื่อให้ log ชัดเจน
+		// add slight delay between tests for readability
 		time.Sleep(500 * time.Millisecond)
 	}
 
