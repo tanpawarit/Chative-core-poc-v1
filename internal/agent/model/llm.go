@@ -1,0 +1,49 @@
+package model
+
+import "time"
+
+// Intent represents a detected user intent
+type Intent struct {
+	Name       string         `json:"name"`
+	Confidence float64        `json:"confidence"`
+	Priority   float64        `json:"priority"`
+	Metadata   map[string]any `json:"metadata"`
+}
+
+// Entity represents an extracted entity from user input
+type Entity struct {
+	Type       string         `json:"type"`
+	Value      string         `json:"value"`
+	Confidence float64        `json:"confidence"`
+	Position   []int          `json:"position,omitempty"`
+	Metadata   map[string]any `json:"metadata"`
+}
+
+// Language represents detected language information
+type Language struct {
+	Code       string         `json:"code"` // ISO 639-3
+	Confidence float64        `json:"confidence"`
+	IsPrimary  bool           `json:"is_primary"` // 1 for primary, 0 for contained
+	Metadata   map[string]any `json:"metadata"`
+}
+
+// Sentiment represents detected sentiment analysis
+type Sentiment struct {
+	Label      string         `json:"label"` // positive, negative, neutral
+	Confidence float64        `json:"confidence"`
+	Metadata   map[string]any `json:"metadata"`
+}
+
+// NLUResponse contains structured output from NLU processing
+type NLUResponse struct {
+	Intents         []Intent       `json:"intents"`
+	Entities        []Entity       `json:"entities"`
+	Languages       []Language     `json:"languages"`
+	Sentiment       Sentiment      `json:"sentiment"`
+	ImportanceScore float64        `json:"importance_score"`
+	PrimaryIntent   string         `json:"primary_intent"`
+	PrimaryLanguage string         `json:"primary_language"`
+	Metadata        map[string]any `json:"metadata"`
+	ParsingMetadata map[string]any `json:"parsing_metadata"`
+	Timestamp       time.Time      `json:"timestamp"`
+}
